@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mermaid Sequence Diagram Renderer</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            min-height: calc(100vh - 40px);
+        }
+
+        .header {
+            background: #2d3748;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            min-height: 600px;
+        }
+
+        .input-section {
+            padding: 20px;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .output-section {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            background: #f8fafc;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+
+        #mermaidInput {
+            width: 100%;
+            height: 400px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        #mermaidInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        #diagramOutput {
+            flex: 1;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            background: white;
+            overflow: auto;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .placeholder {
+            color: #a0aec0;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .error {
+            color: #e53e3e;
+            background: #fed7d7;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .input-section {
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Mermaid Sequence Diagram Renderer</h1>
+            <p>Create beautiful sequence diagrams with Mermaid.js</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <h2 class="section-title">Mermaid Code</h2>
+                <textarea
+                    id="mermaidInput"
+                    placeholder="Enter your Mermaid sequence diagram code here...
+
+Example:
+sequenceDiagram
+    participant A as Alice
+    participant B as Bob
+    A->>B: Hello Bob, how are you?
+    B-->>A: Great!
+    A-)B: See you later!"
+                ></textarea>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="renderDiagram()">Render Diagram</button>
+                    <button class="btn-secondary" onclick="clearAll()">Clear</button>
+                    <button class="btn-secondary" onclick="loadExample()">Load Example</button>
+                </div>
+
+                <div id="errorDisplay"></div>
+            </div>
+
+            <div class="output-section">
+                <h2 class="section-title">Generated Diagram</h2>
+                <div id="diagramOutput">
+                    <div class="placeholder">Your diagram will appear here after clicking "Render Diagram"</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            sequence: {
+                diagramMarginX: 50,
+                diagramMarginY: 10,
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+
+        let diagramCounter = 0;
+
+        function renderDiagram() {
+            const input = document.getElementById('mermaidInput').value.trim();
+            const output = document.getElementById('diagramOutput');
+            const errorDisplay = document.getElementById('errorDisplay');
+
+            errorDisplay.innerHTML = '';
+
+            if (!input) {
+                showError('Please enter some Mermaid code to render.');
+                return;
+            }
+
+            try {
+                const diagramId = 'mermaid-diagram-' + (++diagramCounter);
+                output.innerHTML = `<div id="${diagramId}"></div>`;
+
+                mermaid.render(diagramId + '-svg', input).then(({ svg }) => {
+                    document.getElementById(diagramId).innerHTML = svg;
+                }).catch((error) => {
+                    console.error('Mermaid rendering error:', error);
+                    showError('Error rendering diagram: ' + error.message);
+                    output.innerHTML = '<div class="placeholder">Error rendering diagram. Check your syntax.</div>';
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error: ' + error.message);
+                output.innerHTML = '<div class="placeholder">Error rendering diagram. Check your syntax.</div>';
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('mermaidInput').value = '';
+            document.getElementById('diagramOutput').innerHTML = '<div class="placeholder">Your diagram will appear here after clicking "Render Diagram"</div>';
+            document.getElementById('errorDisplay').innerHTML = '';
+        }
+
+        function loadExample() {
+            const exampleCode = `sequenceDiagram
+    participant U as User
+    participant W as Web App
+    participant S as Server
+    participant D as Database
+
+    U->>W: Enter credentials
+    W->>S: POST /login
+    S->>D: Query user
+    D-->>S: User data
+    S-->>W: JWT token
+    W-->>U: Welcome message
+
+    Note over U,D: Authentication Flow
+
+    U->>W: Request data
+    W->>S: GET /api/data
+    Note right of S: Verify JWT
+    S->>D: Fetch data
+    D-->>S: Return data
+    S-->>W: JSON response
+    W-->>U: Display data`;
+
+            document.getElementById('mermaidInput').value = exampleCode;
+            renderDiagram();
+        }
+
+        function showError(message) {
+            const errorDisplay = document.getElementById('errorDisplay');
+            errorDisplay.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        document.getElementById('mermaidInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                renderDiagram();
+            }
+        });
+    </script>
+</body>
+</html>
